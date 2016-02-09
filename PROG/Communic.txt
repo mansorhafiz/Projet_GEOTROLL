@@ -1,0 +1,184 @@
+/***************************************************************************/
+/*                                                                         */
+/*                              Communic.txt                               */
+/*                                                                         */
+/***************************************************************************/
+/* :mode=archeorient-comm:                                                 */
+/*                                                                         */
+/* Description communication test carte PICF4550                           */
+/*                                                                         */
+/***************************************************************************/
+/* Création     : 18.11.2015  L. Darras        Version 1.0                 */
+/* Vérifié      : 18.11.2015  L. Darras                                    */
+/* Modification :                                                          */
+/***************************************************************************/
+
+
+
+/*-------------------------------------------------------------------------*/
+/* Protocole liaison série RS232                                           */
+/*-------------------------------------------------------------------------*/
+
+Commande :
+   ESC 40h <Cmd> <Nb> [<Data0> [<Data1> ...]] <Crc8>
+      - ESC : synchro début trame (1Bh)
+      - 40h : trame type commande
+      - <Cmd> : code commande, 80h-FEh
+      - <Nb> : nombre octets données, 0-255
+      - <Datax> : octets données, 0 à 255 octets
+      - <Crc8> : Crc 8 bits de ESC à <Datan>
+
+Réponse :
+   ESC C0h <Rep> <Nb> [<Data0> [<Data1> ...]] <Crc8>
+      - ESC : synchro début trame (1Bh)
+      - C0h : trame type réponse
+      - <Rep> : code réponse, 00h-7Fh
+      - <Nb> : nombre octets données, 0-255
+      - <Datax> : octets données, 0 à 255 octets
+      - <Crc8> : Crc 8 bits de ESC à <Datan>
+
+Note : le Crc8 dans les 2 types de trames est calculé avec le polynôme :
+   - x8 + x5 + x4 + 1 (0x31)
+
+Format transmission :
+   - 1 start bit
+   - 8 bits données
+   - pas de parité
+   - 1 stop bit
+   - soit au total 10 bits
+
+Vitesse transmission :
+   - 115200 baud
+
+Contrôle flux :
+   - système commande/réponse : le PC envoie une commande (trame type 40h)
+     puis attend une réponse (trame type C0h) de la carte avec un time-out de
+     200 ms (ou plus, voir note <Cmd-8Ah>) avant d'envoyer la commande
+     suivante
+   - si pas de réponse après le time-out, le PC peut faire un nouvel essai
+     d'émission de la commande (2 répétitions au maximum)
+
+Note : si silence de plus de 150 ms entre la réception de 2 octets, annulation
+réception trame en cours et reprise à attente ESC (synchro début trame, 1Bh).
+
+
+
+/*-------------------------------------------------------------------------*/
+/* Conventions                                                             */
+/*-------------------------------------------------------------------------*/
+
+Paramètres commandes et réponses :
+   - dans la suite les paramètres sont décrit avec les noms suivants :
+        . BYTE : entier 8 bits non signé, 1 octet
+        . BYTE[n] : tableau de <n> entiers 8 bits non signés, <n> octets
+        . WORD : entier 16 bits non signé, 2 octets, octet de poids fort
+                 en premier (big endian)
+        . DWORD : entier 32 bits non signé, 4 octets, octet de poids fort
+                  en premier (big endian)
+        . STRING(n) : chaîne de <n> caractères, <n> octets
+
+Un champ encadré par '[' et ']' indique qu'il s'agit d'un paramètre optionnel.
+
+
+
+/*-------------------------------------------------------------------------*/
+/* Réponse erreur                                                          */
+/*-------------------------------------------------------------------------*/
+
+S'il est impossible d'éxécuter la commande, une réponse erreur est
+retournée par la carte contrôleur.
+
+<Rep-7Fh> : réponse erreur
+   BYTE Cmd : code commande qui a provoqué erreur, 80h-FEh
+   BYTE Error : code erreur :
+      01h : code commande inconnu [ERRUNKNOWN]
+      03h : commande interdite dans cet état [ERRSTATE]
+      04h : nombre incorrect de paramètres dans commande [ERRSIZE]
+      05h : paramètre hors limites dans commande [ERRLIMIT]
+      06h : réponse trop grande pour ce canal de communication [ERRREPSIZE]
+
+<Rep-7Fh> : réponse erreur étendue
+   BYTE Cmd : code commande qui a provoqué erreur, 80h-FEh
+   BYTE Error : code erreur (idem ci-dessus)
+   DWORD AddData : données complémentaires description erreur :
+      - pour erreurs 21h (adresse en dehors zone en cours programmation/
+        lecture) :
+           . 1ère adresse en dehors zone
+      - pour erreurs 22h (problème déverrouillage), 23h (problème verrouillage)
+        et 24h (problème effacement) :
+           . adresse début secteur avec problème
+      - pour erreurs 25h (octet non effacé avant programmation), 26h (problème
+        programmation, 27h (mauvaise valeur octet après programmation) et
+        28h (problème lecture Flash)
+           . adresse octet avec problème
+
+
+
+/*-------------------------------------------------------------------------*/
+/* Commandes/réponses générales                                            */
+/*-------------------------------------------------------------------------*/
+
+<Cmd-80h> : lecture type carte
+   pas de paramètre
+<Rep-00h> : réponse type carte
+   STRING(8) Name : nom carte, toujours "PIC18USB"
+
+<Cmd-81h> : lecture version logiciel
+   pas de paramètre
+<Rep-01h> : réponse version logiciel
+   STRING(4) Version : version du logiciel, "vvrc" :
+      "vv" : numéro version, "01" à "99"
+      "r" : numéro révision, "0" à "9"
+      "c" : indice correction, " " ou "a" à "z"
+   WORD Crc16 : Crc 16 bits du logiciel en Flash
+
+<Cmd-82h> : lecture date/heure génération logiciel
+   pas de paramètre
+<Rep-02h> : réponse date/heure génération logiciel
+   BYTE Day : jour, 1-31
+   BYTE Month : mois, 1-12
+   WORD Year : année, 2006-2099
+   BYTE Hour : heure, 0-23
+   BYTE Minute : minute, 0-59
+   BYTE Second : seconde, 0-59
+
+
+
+/*-------------------------------------------------------------------------*/
+/* Commandes/réponses micro-contrôleur                                     */
+/*-------------------------------------------------------------------------*/
+
+<Cmd-90h> : passage micro-contrôleur en mode transparent
+   DWORD Baudrate : vitesse de communication entre micro-contrôleur et VNC
+   BOOL RtsCts : =0 pas gestion lignes RTS et CTS, =1-255 contrôle flux
+      matériel avec ligne CTS et RTS
+<Rep-10h> : réponse passage micro-contrôleur en mode transparent
+   pas de paramètre
+
+Note : après traitement de cette commande, la réponse est émise puis le mode
+transparent est activé dans un délai maximum de 50 ms. La sortie du mode
+transparent se fait par l'émission d'un Break ; au moment de la réception du
+Break, les Uarts sont ré-initialisés quel que soit le contenu des buffers
+d'émission et de réception. Les caractères en attente sont donc perdus. Le
+Break doit donc être émis lorsque la communication avec le VNC est terminée.
+Après réception du Break, le micro-contrôleur est prêt pour recevoir une
+nouvelle commande dans un délai maximum de 50 ms.
+
+
+<Cmd-91h> : écriture sorties micro-contrôleur
+   BYTE Port : port µC ou écrire les sorties, 1 = port A à 7 = port G
+   BYTE Msk  : masque pour écriture sorties :
+               bit à 0 : pas modification état sortie correspondante
+               bit à 1 : écriture sortie correspondante
+   BYTE Out  : états à écrire sur les sorties définies par le masque
+      bits 0-7 : lignes 0-7 du port Port
+<Rep-11h> : réponse sorties
+   pas de paramètre
+
+<Cmd-92h> : lecture entrées micro-contrôleur
+   BYTE Port : port µC ou lire les entrées, 1 = port A à 7 = port G
+   BYTE Msk  : masque pour lecture entrées :
+               bit à 0 : pas lecture entrée correspondante
+               bit à 1 : lecture entrée correspondante
+<Rep-12h> : réponse entrées
+   BYTE In : états des entrées définies par le masque

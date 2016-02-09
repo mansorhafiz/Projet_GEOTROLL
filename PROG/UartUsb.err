@@ -1,0 +1,10 @@
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 47 : unable to locate '..\..\autofiles\usbcfg.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 48 : unable to locate 'usbdefs\usbdefs_std_dsc.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 49 : unable to locate '..\..\autofiles\usbdsc.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 51 : unable to locate 'usbdefs\usbdefs_ep0_buff.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 52 : unable to locate '..\..\system\usb\usbmmap.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 54 : unable to locate 'usbdrv\usbdrv.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 55 : unable to locate 'usbctrltrf\usbctrltrf.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\system\usb\usb.h 56 : unable to locate 'usb9\usb9.h'
+Error[1027] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\io_cfg.h 43 : unable to locate '.\autofiles\usbcfg.h'
+Error[1099] D:\DEVELOPPEMENT\PIC\PIC18USB\PROG\CDC\io_cfg.h 209 : Not a supported board (yet), add I/O pin mapping in "./CDC\io_cfg.h", line 209

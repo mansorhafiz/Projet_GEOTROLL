@@ -1,0 +1,22 @@
+Outils développement
+--------------------
+
+Encodage source : Ansi (1252)
+
+Compilateur   : MPLAB C18 V3.45
+Assembleur    : 
+Editeur liens :
+Bibliothèque  : 
+                
+Débugger      : MPLAB X
+                
+Sonde prog   : Microchip Pickit 3
+
+Construction :
+   - pour version définitive et suppression des fichiers intermédiaires :
+        . batch 'Build.bat'
+        . génération fichier .hex au format Hex
+   - pour version débug :
+        . lancement débugger par lancement du projet 'PIC18USB.X'
+
+
